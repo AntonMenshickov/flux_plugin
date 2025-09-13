@@ -20,24 +20,26 @@ void main() async {
     ),
   );
   FluxLogs.instance.info(
-    'test message\n\nwith empty lines\n\ntest\n\nend',
+    'test message with duplicate tags trim\n\nand with empty lines\n\ntest\n\nend',
     tags: ['test', 'debug', 'debug'],
   );
   FluxLogs.instance.info(
-    'test message\nwith two lines',
+    'test message\nwith two lines and two tags',
     tags: ['test', 'debug', 'debug'],
   );
   FluxLogs.instance.warn('test message\nwith a two lines');
   FluxLogs.instance.error(
-    'test message\nwith a two lines and stackTrace:\n',
+    'test message with stackTrace and 100 tags\n',
     tags: List.generate(100, (i) => 'tag $i'),
     stackTrace: StackTrace.current,
   );
   FluxLogs.instance.debug('test message\nwith a two lines');
 
-  FluxLogs.instance.info(
-    '\x1B[33mtesting trim\n  \x1B[0mANSI escape sequences',
-    tags: ['test', 'debug', 'debug'],
+  FluxLogs.instance.debug(
+    '\x1B[33mtesting trim \x1B[0mANSI escape sequences',
+  );
+  FluxLogs.instance.debug(
+    ' testing tabulation\n  and spaces',
   );
   // final start = DateTime.timestamp();
   // for (int i = 0; i < 1000; i++) {
