@@ -5,6 +5,7 @@ import 'package:flux_plugin/model/log_level.dart';
 
 class Printer {
   static const int _maxLineLength = 200;
+  static const int _chunkSize = 4000;
   static const Map<LogLevel, String> _logLevelAnsiColorCodes = {
     LogLevel.info: '\x1B[34m',
     LogLevel.warn: '\x1B[33m',
@@ -53,8 +54,8 @@ class Printer {
       }
     }
 
-    final List<String> stackTraceLines =
-        stackTrace?.toString().getLines().toList() ?? [];
+    final Iterable<String> stackTraceLines =
+        stackTrace?.toString().getLines() ?? [];
 
     final String colorCode =
         _logLevelAnsiColorCodes[level] ?? _whiteAnsiColorCode;
@@ -79,34 +80,48 @@ class Printer {
     final String label =
         '$_horizontalLine${level.value.capitalize()}${tagsLabel.isEmpty ? _horizontalLine : ''}$tagsLabel';
 
-    final sb = StringBuffer();
+    final buffer = StringBuffer();
+    void flush() {
+      if (buffer.isNotEmpty) {
+        // ignore: avoid_print
+        print(buffer.toString().trimRight());
+        buffer.clear();
+      }
+    }
 
-    sb.writeln(
+    void addLine(String line) {
+      if (buffer.length + line.length + 1 > _chunkSize) {
+        flush();
+      }
+      buffer.writeln(line);
+    }
+
+    addLine(
       '$colorCode$_upLeftCorner$label${_horizontalLine * (width + 2 - label.length)}$_upRightCorner$_resetAnsiCode',
     );
 
     for (final line in lines) {
-      sb.writeln(
+      addLine(
         '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
       );
     }
 
     if (stackTraceLines.isNotEmpty) {
-      sb.writeln(
+      addLine(
         '$colorCode$_middleLeftCorner$_horizontalLine$_stackTraceLabel${_horizontalLine * (width + 1 - _stackTraceLabel.length)}$_middleRightCorner$_resetAnsiCode',
       );
 
       for (final line in stackTraceLines) {
-        sb.writeln(
+        addLine(
           '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
         );
       }
     }
 
-    sb.write(
+    addLine(
       '$colorCode$_downLeftCorner${_horizontalLine * (width + 2)}$_downRightCorner$_resetAnsiCode',
     );
-    // ignore: avoid_print
-    print(sb.toString());
+
+    flush();
   }
 }
