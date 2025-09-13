@@ -1,37 +1,44 @@
+import 'dart:convert';
+
 final ansiRegex = RegExp(r'\x1B\[[0-9;]*m');
 final lineBreaksRegex = RegExp(r'[\r\n]+');
+final spaceCharactersRegex = RegExp(r'\s+');
 
 extension StringExt on String {
   String capitalize() =>
       isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
 
-  Iterable<String> getLines() =>
-      split('\n').map((l) => l.trimRight()).where((l) => l.isNotEmpty);
+  Iterable<String> getLines() sync* {
+    final lines = LineSplitter.split(this);
+    for (var line in lines) {
+      line = line.trimRight();
+      if (line.isNotEmpty) yield line;
+    }
+  }
 
   String removeAnsiEscape() => replaceAll(ansiRegex, '');
 
   String removeLineBreaks() => replaceAll(lineBreaksRegex, '');
 
   List<String> splitByWords(int maxLength) {
-    List<String> result = [];
-    List<String> words = split(RegExp(r'\s+'));
-    String currentLine = '';
+    if (length <= maxLength) return [this];
 
+    final result = <String>[];
+    final words = split(spaceCharactersRegex);
+    final sb = StringBuffer();
     for (var word in words) {
-      if (currentLine.isEmpty) {
-        currentLine = word;
-      } else if ((currentLine.length + 1 + word.length) <= maxLength) {
-        currentLine += ' $word';
+      if (sb.isEmpty) {
+        sb.write(word);
+      } else if (sb.length + 1 + word.length <= maxLength) {
+        sb.write(' $word');
       } else {
-        result.add(currentLine);
-        currentLine = word;
+        result.add(sb.toString());
+        sb
+          ..clear()
+          ..write(word);
       }
     }
-
-    if (currentLine.isNotEmpty) {
-      result.add(currentLine);
-    }
-
+    if (sb.isNotEmpty) result.add(sb.toString());
     return result;
   }
 }

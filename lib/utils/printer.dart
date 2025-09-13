@@ -12,7 +12,7 @@ class Printer {
     LogLevel.debug: '\x1B[1;35m',
   };
   static const String _whiteAnsiColorCode = '\x1B[37m';
-  static const String _logLevelColorResetAnsiCode = '\x1B[0m';
+  static const String _resetAnsiCode = '\x1B[0m';
 
   static const String _horizontalLine = '\u2500';
   static const String _verticalLine = '\u2502';
@@ -42,76 +42,71 @@ class Printer {
     List<String>? tags,
     StackTrace? stackTrace,
   ) {
-    if (message.trim().isEmpty && stackTrace == null) {
-      return;
+    if (message.trim().isEmpty && stackTrace == null) return;
+
+    final List<String> lines = [];
+    for (var line in message.getLines()) {
+      if (line.length > _maxLineLength) {
+        lines.addAll(line.splitByWords(_maxLineLength));
+      } else {
+        lines.add(line);
+      }
     }
-    final Iterable<String> linesRaw = message.getLines();
-    final Iterable<String>? stackTraceLines = stackTrace?.toString().getLines();
-    if (linesRaw.isEmpty && stackTraceLines?.isEmpty == true) {
-      return;
-    }
-    final Iterable<String> lines = linesRaw
-        .map(
-          (line) => line.length > _maxLineLength
-              ? line.splitByWords(_maxLineLength)
-              : [line],
-        )
-        .expand((l) => l);
+
+    final List<String> stackTraceLines =
+        stackTrace?.toString().getLines().toList() ?? [];
+
     final String colorCode =
         _logLevelAnsiColorCodes[level] ?? _whiteAnsiColorCode;
-    final int linesWidth = _getMaxWidthFromLines(lines);
-    final int stackTraceWidth = stackTraceLines != null
-        ? _getMaxWidthFromLines(stackTraceLines)
-        : 0;
-    final tagsLabel = tags != null && tags.isNotEmpty
+
+    final int linesWidth = lines.isEmpty
+        ? 0
+        : lines.map((l) => l.length).reduce(max);
+    final int stackTraceWidth = stackTraceLines.isEmpty
+        ? 0
+        : stackTraceLines.map((l) => l.length).reduce(max);
+
+    final String tagsLabel = (tags != null && tags.isNotEmpty)
         ? '$_horizontalLine[${tags.take(5).join(", ")}${tags.length > 5 ? ', ...(+${tags.length - 5} tags)' : ''}]$_horizontalLine'
         : '';
-    final minWidth = max(
+
+    final int minWidth = max(
       level.value.length + tagsLabel.length,
       _stackTraceLabel.length,
     );
-    final width = max(max(linesWidth, stackTraceWidth), minWidth);
+    final int width = max(max(linesWidth, stackTraceWidth), minWidth);
+
     final String label =
         '$_horizontalLine${level.value.capitalize()}${tagsLabel.isEmpty ? _horizontalLine : ''}$tagsLabel';
-    _printColoredMessage(
-      _upLeftCorner +
-          label +
-          _horizontalLine * (width + 2 - label.length) +
-          _upRightCorner,
-      colorCode,
+
+    final sb = StringBuffer();
+
+    sb.writeln(
+      '$colorCode$_upLeftCorner$label${_horizontalLine * (width + 2 - label.length)}$_upRightCorner$_resetAnsiCode',
     );
-    for (String line in lines) {
-      _printColoredMessage(
-        '$_verticalLine ${line.padRight(width)} $_verticalLine',
-        colorCode,
+
+    for (final line in lines) {
+      sb.writeln(
+        '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
       );
     }
-    if (stackTraceLines != null) {
-      _printColoredMessage(
-        _middleLeftCorner +
-            _horizontalLine +
-            _stackTraceLabel +
-            _horizontalLine * (width + 1 - _stackTraceLabel.length) +
-            _middleRightCorner,
-        colorCode,
+
+    if (stackTraceLines.isNotEmpty) {
+      sb.writeln(
+        '$colorCode$_middleLeftCorner$_horizontalLine$_stackTraceLabel${_horizontalLine * (width + 1 - _stackTraceLabel.length)}$_middleRightCorner$_resetAnsiCode',
       );
-      for (String line in stackTraceLines) {
-        _printColoredMessage(
-          '$_verticalLine ${line.padRight(width)} $_verticalLine',
-          colorCode,
+
+      for (final line in stackTraceLines) {
+        sb.writeln(
+          '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
         );
       }
     }
-    _printColoredMessage(
-      _downLeftCorner + _horizontalLine * (width + 2) + _downRightCorner,
-      colorCode,
+
+    sb.write(
+      '$colorCode$_downLeftCorner${_horizontalLine * (width + 2)}$_downRightCorner$_resetAnsiCode',
     );
+    // ignore: avoid_print
+    print(sb.toString());
   }
-
-  static void _printColoredMessage(String message, String ansiColorCode) =>
-      // ignore: avoid_print
-      print('$ansiColorCode$message$_logLevelColorResetAnsiCode');
-
-  static int _getMaxWidthFromLines(Iterable<String> lines) =>
-      lines.reduce((a, b) => a.length > b.length ? a : b).length;
 }
