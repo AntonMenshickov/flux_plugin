@@ -10,7 +10,13 @@ class PrinterOptions {
   ///maximum buffer size for single print() call
   final int chunkSize;
 
-  const PrinterOptions({this.maxLineLength = 200, this.chunkSize = 4000});
+  final bool removeEmptyLines;
+
+  const PrinterOptions({
+    this.maxLineLength = 200,
+    this.chunkSize = 4000,
+    this.removeEmptyLines = false,
+  });
 }
 
 class Printer {
@@ -35,10 +41,12 @@ class Printer {
 
   final int _maxLineLength;
   final int _chunkSize;
+  final bool _removeEmptyLines;
 
   Printer(PrinterOptions options)
     : _maxLineLength = options.maxLineLength,
-      _chunkSize = options.chunkSize;
+      _chunkSize = options.chunkSize,
+      _removeEmptyLines = options.removeEmptyLines;
 
   void log(
     String message, [
@@ -61,7 +69,7 @@ class Printer {
     if (message.trim().isEmpty && stackTrace == null) return;
 
     final List<String> lines = [];
-    for (var line in message.getLines()) {
+    for (var line in message.getLines(removeEmptyLines: _removeEmptyLines)) {
       if (line.length > _maxLineLength) {
         lines.addAll(line.splitByWords(_maxLineLength));
       } else {
@@ -70,7 +78,7 @@ class Printer {
     }
 
     final Iterable<String> stackTraceLines =
-        stackTrace?.toString().getLines() ?? [];
+        stackTrace?.toString().getLines(removeEmptyLines: false) ?? [];
 
     final String colorCode =
         _logLevelAnsiColorCodes[level] ?? _whiteAnsiColorCode;

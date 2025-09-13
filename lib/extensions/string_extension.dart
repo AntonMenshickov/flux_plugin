@@ -8,11 +8,12 @@ extension StringExt on String {
   String capitalize() =>
       isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
 
-  Iterable<String> getLines() sync* {
+  Iterable<String> getLines({bool removeEmptyLines = false}) sync* {
     final lines = LineSplitter.split(this);
     for (var line in lines) {
       line = line.trimRight();
-      if (line.isNotEmpty) yield line;
+      if (removeEmptyLines && line.isEmpty) continue;
+      yield line;
     }
   }
 
