@@ -22,12 +22,15 @@ class FluxLogsConfig {
   ///for flutter path_provider.getApplicationDocumentsDirectory can be used
   final String storagePath;
 
+  final bool releaseMode;
+
   const FluxLogsConfig({
     required this.platform,
     required this.bundleId,
     required this.deviceId,
     required this.token,
     required this.storagePath,
+    this.releaseMode = true,
   });
 }
 
@@ -47,6 +50,7 @@ class FluxLogs {
   late final String _bundleId;
   late final String _deviceId;
   late final String _token;
+  late final bool _releaseMode;
 
   Future<void> init(FluxLogsConfig config) async {
     _uuid = Uuid();
@@ -55,6 +59,7 @@ class FluxLogs {
     _bundleId = config.bundleId;
     _deviceId = config.deviceId;
     _token = config.token;
+    _releaseMode = config.releaseMode;
 
     Hive.init(config.storagePath);
     Hive.registerAdapter(EventMessageAdapter());
@@ -78,7 +83,9 @@ class FluxLogs {
         .map((t) => t.trim().removeLineBreaks())
         .toSet()
         .toList();
-    Printer.log(message, logLevel, uniqueTags, stackTrace);
+    if (!_releaseMode) {
+      Printer.log(message, logLevel, uniqueTags, stackTrace);
+    }
     final EventMessage eventMessage = EventMessage(
       timestamp: DateTime.timestamp(),
       logLevel: logLevel,

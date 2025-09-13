@@ -4,6 +4,7 @@ import 'package:flux_plugin/extensions/string_extension.dart';
 import 'package:flux_plugin/model/log_level.dart';
 
 class Printer {
+  static const int _maxLineLength = 200;
   static const Map<LogLevel, String> _logLevelAnsiColorCodes = {
     LogLevel.info: '\x1B[34m',
     LogLevel.warn: '\x1B[33m',
@@ -22,7 +23,6 @@ class Printer {
   static const String _middleLeftCorner = '\u251C';
   static const String _middleRightCorner = '\u2524';
   static const String _stackTraceLabel = 'Stack trace';
-
 
   static void log(
     String message, [
@@ -45,11 +45,18 @@ class Printer {
     if (message.trim().isEmpty && stackTrace == null) {
       return;
     }
-    final Iterable<String> lines = message.getLines();
+    final Iterable<String> linesRaw = message.getLines();
     final Iterable<String>? stackTraceLines = stackTrace?.toString().getLines();
-    if (lines.isEmpty && stackTraceLines?.isEmpty == true) {
+    if (linesRaw.isEmpty && stackTraceLines?.isEmpty == true) {
       return;
     }
+    final Iterable<String> lines = linesRaw
+        .map(
+          (line) => line.length > _maxLineLength
+              ? line.splitByWords(_maxLineLength)
+              : [line],
+        )
+        .expand((l) => l);
     final String colorCode =
         _logLevelAnsiColorCodes[level] ?? _whiteAnsiColorCode;
     final int linesWidth = _getMaxWidthFromLines(lines);
