@@ -3,9 +3,17 @@ import 'dart:math';
 import 'package:flux_plugin/extensions/string_extension.dart';
 import 'package:flux_plugin/model/log_level.dart';
 
+class PrinterOptions {
+  ///maximum line length
+  final int maxLineLength;
+
+  ///maximum buffer size for single print() call
+  final int chunkSize;
+
+  const PrinterOptions({this.maxLineLength = 200, this.chunkSize = 4000});
+}
+
 class Printer {
-  static const int _maxLineLength = 200;
-  static const int _chunkSize = 4000;
   static const Map<LogLevel, String> _logLevelAnsiColorCodes = {
     LogLevel.info: '\x1B[34m',
     LogLevel.warn: '\x1B[33m',
@@ -25,7 +33,14 @@ class Printer {
   static const String _middleRightCorner = '\u2524';
   static const String _stackTraceLabel = 'Stack trace';
 
-  static void log(
+  final int _maxLineLength;
+  final int _chunkSize;
+
+  Printer(PrinterOptions options)
+    : _maxLineLength = options.maxLineLength,
+      _chunkSize = options.chunkSize;
+
+  void log(
     String message, [
     LogLevel level = LogLevel.info,
     List<String>? tags,
@@ -37,7 +52,7 @@ class Printer {
     stackTrace,
   );
 
-  static void _printPrettifiedMessage(
+  void _printPrettifiedMessage(
     String message,
     LogLevel level,
     List<String>? tags,

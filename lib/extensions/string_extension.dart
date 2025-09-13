@@ -26,7 +26,7 @@ extension StringExt on String {
     final result = <String>[];
     final words = split(spaceCharactersRegex);
     final sb = StringBuffer();
-    for (var word in words) {
+    for (String word in words) {
       if (sb.isEmpty) {
         sb.write(word);
       } else if (sb.length + 1 + word.length <= maxLength) {

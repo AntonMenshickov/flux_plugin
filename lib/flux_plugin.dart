@@ -42,6 +42,8 @@ class FluxLogs {
 
   static FluxLogs get instance => _instance;
 
+  late final Printer _printer;
+
   late final Uuid _uuid;
   late final Box<EventMessage> _queueBox;
   late final Box<EventMessage> _processingBox;
@@ -52,7 +54,12 @@ class FluxLogs {
   late final String _token;
   late final bool _releaseMode;
 
-  Future<void> init(FluxLogsConfig config) async {
+  Future<void> init(
+    FluxLogsConfig config, [
+    PrinterOptions? printerOptions,
+  ]) async {
+    _printer = Printer(printerOptions ?? PrinterOptions());
+
     _uuid = Uuid();
 
     _platform = config.platform;
@@ -84,7 +91,7 @@ class FluxLogs {
         .toSet()
         .toList();
     if (!_releaseMode) {
-      Printer.log(message, logLevel, uniqueTags, stackTrace);
+      _printer.log(message, logLevel, uniqueTags, stackTrace);
     }
     final EventMessage eventMessage = EventMessage(
       timestamp: DateTime.timestamp(),
