@@ -3,7 +3,6 @@ import 'package:flux_plugin/model/event_message.dart';
 import 'package:flux_plugin/model/log_level.dart';
 import 'package:flux_plugin/reliable_batch_queue/reliable_batch_queue.dart';
 import 'package:flux_plugin/utils/printer.dart';
-import 'package:hive/hive.dart';
 
 import 'api/api.dart';
 
@@ -17,17 +16,13 @@ class FluxLogsConfig {
   ///Unique device identifier
   final String deviceId;
 
-  ///Directory when events will be stored
-  ///for flutter path_provider.getApplicationDocumentsDirectory can be used
-  final String storagePath;
-
+  ///when release mode enabled logs will not be printer. Only sending to server
   final bool releaseMode;
 
   const FluxLogsConfig({
     required this.platform,
     required this.bundleId,
     required this.deviceId,
-    required this.storagePath,
     this.releaseMode = true,
   });
 }
@@ -44,30 +39,24 @@ class FluxLogs {
   late final String _platform;
   late final String _bundleId;
   late final String _deviceId;
-  late final String _token;
   late final bool _releaseMode;
 
   Future<void> init(
     FluxLogsConfig config,
-    ApiConfig apiConfig, [
+    ApiConfig apiConfig,
+    ReliableBatchQueueOptions queueOptions, [
     PrinterOptions? printerOptions,
-    ReliableBatchQueueOptions? queueOptions,
   ]) async {
     _api = Api(apiConfig);
     _printer = Printer(printerOptions ?? PrinterOptions());
-    _queue = ReliableBatchQueue(
-      queueOptions ?? ReliableBatchQueueOptions(),
-      _api,
-    );
+    _queue = ReliableBatchQueue(queueOptions, _api);
 
     _platform = config.platform;
     _bundleId = config.bundleId;
     _deviceId = config.deviceId;
     _releaseMode = config.releaseMode;
 
-    Hive.init(config.storagePath);
-    Hive.registerAdapter(EventMessageAdapter());
-    Hive.registerAdapter(LogLevelAdapter());
+    await _queue.init();
   }
 
   void _putEventToBox(EventMessage event) {

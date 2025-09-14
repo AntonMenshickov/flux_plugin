@@ -3,15 +3,24 @@ import 'dart:math';
 
 import 'package:flux_plugin/api/api.dart';
 import 'package:flux_plugin/model/event_message.dart';
+import 'package:flux_plugin/model/log_level.dart';
 import 'package:hive/hive.dart';
 
 class ReliableBatchQueueOptions {
+  ///amount of records that can be sent to server in one time
   final int batchSize;
+
+  ///interval in milliseconds when automatically flush logs to server
   final int flushIntervalMs;
+
+  ///Directory when events will be stored
+  ///for flutter path_provider.getApplicationDocumentsDirectory can be used
+  final String storagePath;
 
   ReliableBatchQueueOptions({
     this.batchSize = 1000,
     this.flushIntervalMs = 10000,
+    required this.storagePath,
   });
 }
 
@@ -26,6 +35,7 @@ class ReliableBatchQueue {
 
   late final int _batchSize;
   late final int _flushIntervalMs;
+  late final String _storagePath;
 
   int _sequenceKey = 0;
   bool _flushing = false;
@@ -34,9 +44,13 @@ class ReliableBatchQueue {
   ReliableBatchQueue(ReliableBatchQueueOptions options, Api api)
     : _api = api,
       _batchSize = options.batchSize,
-      _flushIntervalMs = options.flushIntervalMs;
+      _flushIntervalMs = options.flushIntervalMs,
+      _storagePath = options.storagePath;
 
   Future<void> init() async {
+    Hive.init(_storagePath);
+    Hive.registerAdapter(EventMessageAdapter());
+    Hive.registerAdapter(LogLevelAdapter());
     _queueBox = await Hive.openBox(_queueBoxName);
     _processingBox = await Hive.openBox(_processingBoxName);
     await _restoreProcessing();
@@ -53,7 +67,7 @@ class ReliableBatchQueue {
         .cast();
     for (var entry in processingKeys) {
       if (_queueBox.get(entry.key) == null) {
-        await _queueBox.put(entry.key, entry.value);
+        await _queueBox.put(entry.key, entry.value.clone());
       }
     }
     await _processingBox.clear();
@@ -91,7 +105,7 @@ class ReliableBatchQueue {
       for (int key in keys) {
         final EventMessage? event = _queueBox.get(key);
         if (event != null) {
-          await _processingBox.put(key, event);
+          await _processingBox.put(key, event.clone());
           await _queueBox.delete(key);
         }
       }

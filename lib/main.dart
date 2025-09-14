@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flux_plugin/api/api.dart';
 import 'package:flux_plugin/flux_plugin.dart';
+import 'package:flux_plugin/reliable_batch_queue/reliable_batch_queue.dart';
 import 'package:flux_plugin/utils/printer.dart';
 
 void main() async {
@@ -10,10 +11,10 @@ void main() async {
       platform: 'desktop',
       bundleId: 'com.example.app',
       deviceId: 'abcd',
-      storagePath: Directory.current.path,
       releaseMode: false,
     ),
     ApiConfig(token: '--token--', url: 'http://127.0.0.1:4000'),
+    ReliableBatchQueueOptions(storagePath: Directory.current.path),
     PrinterOptions(
       maxLineLength: 180,
       chunkSize: 4000,

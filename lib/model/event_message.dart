@@ -36,4 +36,15 @@ class EventMessage extends HiveObject {
     required this.meta,
     this.stackTrace,
   });
+
+  EventMessage clone() => EventMessage(
+    timestamp: timestamp,
+    logLevel: logLevel,
+    platform: platform,
+    bundleId: bundleId,
+    deviceId: deviceId,
+    message: message,
+    tags: tags,
+    meta: meta,
+  );
 }
