@@ -5,6 +5,8 @@ import 'package:flux_plugin/reliable_batch_queue/reliable_batch_queue.dart';
 import 'package:flux_plugin/utils/printer.dart';
 import 'package:hive/hive.dart';
 
+import 'api/api.dart';
+
 class FluxLogsConfig {
   ///platform e.g. android, ios
   final String platform;
@@ -14,9 +16,6 @@ class FluxLogsConfig {
 
   ///Unique device identifier
   final String deviceId;
-
-  ///Generated app token
-  final String token;
 
   ///Directory when events will be stored
   ///for flutter path_provider.getApplicationDocumentsDirectory can be used
@@ -28,7 +27,6 @@ class FluxLogsConfig {
     required this.platform,
     required this.bundleId,
     required this.deviceId,
-    required this.token,
     required this.storagePath,
     this.releaseMode = true,
   });
@@ -39,6 +37,7 @@ class FluxLogs {
 
   static FluxLogs get instance => _instance;
 
+  late final Api _api;
   late final ReliableBatchQueue _queue;
   late final Printer _printer;
 
@@ -49,17 +48,21 @@ class FluxLogs {
   late final bool _releaseMode;
 
   Future<void> init(
-    FluxLogsConfig config, [
+    FluxLogsConfig config,
+    ApiConfig apiConfig, [
     PrinterOptions? printerOptions,
     ReliableBatchQueueOptions? queueOptions,
   ]) async {
+    _api = Api(apiConfig);
     _printer = Printer(printerOptions ?? PrinterOptions());
-    _queue = ReliableBatchQueue(queueOptions ?? ReliableBatchQueueOptions());
+    _queue = ReliableBatchQueue(
+      queueOptions ?? ReliableBatchQueueOptions(),
+      _api,
+    );
 
     _platform = config.platform;
     _bundleId = config.bundleId;
     _deviceId = config.deviceId;
-    _token = config.token;
     _releaseMode = config.releaseMode;
 
     Hive.init(config.storagePath);

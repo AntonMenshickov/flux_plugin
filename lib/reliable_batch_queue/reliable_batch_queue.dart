@@ -19,6 +19,8 @@ class ReliableBatchQueue {
   static const String _queueBoxName = 'flux_logs_queue_box';
   static const String _processingBoxName = 'flux_logs_processing_box';
 
+  late final Api _api;
+
   late final Box<EventMessage> _queueBox;
   late final Box<EventMessage> _processingBox;
 
@@ -29,8 +31,9 @@ class ReliableBatchQueue {
   bool _flushing = false;
   Timer? _flushTimer;
 
-  ReliableBatchQueue(ReliableBatchQueueOptions options)
-    : _batchSize = options.batchSize,
+  ReliableBatchQueue(ReliableBatchQueueOptions options, Api api)
+    : _api = api,
+      _batchSize = options.batchSize,
       _flushIntervalMs = options.flushIntervalMs;
 
   Future<void> init() async {
@@ -110,7 +113,7 @@ class ReliableBatchQueue {
     print('[ReliableBatchQueue] Flushing ${batch.length} messages');
 
     try {
-      await Api.uploadEventsBatch(batch);
+      await _api.uploadEventsBatch(batch);
       await _processingBox.clear();
     } catch (err) {
       print(

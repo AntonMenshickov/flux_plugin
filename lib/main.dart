@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flux_plugin/api/api.dart';
 import 'package:flux_plugin/flux_plugin.dart';
 import 'package:flux_plugin/utils/printer.dart';
 
@@ -9,10 +10,10 @@ void main() async {
       platform: 'desktop',
       bundleId: 'com.example.app',
       deviceId: 'abcd',
-      token: '--token--',
       storagePath: Directory.current.path,
       releaseMode: false,
     ),
+    ApiConfig(token: '--token--', url: 'http://127.0.0.1:4000'),
     PrinterOptions(
       maxLineLength: 180,
       chunkSize: 4000,
@@ -35,12 +36,8 @@ void main() async {
   );
   FluxLogs.instance.debug('test message\nwith a two lines');
 
-  FluxLogs.instance.debug(
-    '\x1B[33mtesting trim \x1B[0mANSI escape sequences',
-  );
-  FluxLogs.instance.debug(
-    ' testing tabulation\n  and spaces',
-  );
+  FluxLogs.instance.debug('\x1B[33mtesting trim \x1B[0mANSI escape sequences');
+  FluxLogs.instance.debug(' testing tabulation\n  and spaces');
   // final start = DateTime.timestamp();
   // for (int i = 0; i < 1000; i++) {
   //   FluxLogs.instance.info(
