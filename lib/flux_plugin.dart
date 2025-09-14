@@ -1,9 +1,9 @@
 import 'package:flux_plugin/extensions/string_extension.dart';
 import 'package:flux_plugin/model/event_message.dart';
 import 'package:flux_plugin/model/log_level.dart';
+import 'package:flux_plugin/reliable_batch_queue/reliable_batch_queue.dart';
 import 'package:flux_plugin/utils/printer.dart';
 import 'package:hive/hive.dart';
-import 'package:uuid/uuid.dart';
 
 class FluxLogsConfig {
   ///platform e.g. android, ios
@@ -35,18 +35,12 @@ class FluxLogsConfig {
 }
 
 class FluxLogs {
-  static const String _queueBoxName = 'flux_logs_queue_box';
-  static const String _processingBoxName = 'flux_logs_processing_box';
-
   static final FluxLogs _instance = FluxLogs();
 
   static FluxLogs get instance => _instance;
 
+  late final ReliableBatchQueue _queue;
   late final Printer _printer;
-
-  late final Uuid _uuid;
-  late final Box<EventMessage> _queueBox;
-  late final Box<EventMessage> _processingBox;
 
   late final String _platform;
   late final String _bundleId;
@@ -57,10 +51,10 @@ class FluxLogs {
   Future<void> init(
     FluxLogsConfig config, [
     PrinterOptions? printerOptions,
+    ReliableBatchQueueOptions? queueOptions,
   ]) async {
     _printer = Printer(printerOptions ?? PrinterOptions());
-
-    _uuid = Uuid();
+    _queue = ReliableBatchQueue(queueOptions ?? ReliableBatchQueueOptions());
 
     _platform = config.platform;
     _bundleId = config.bundleId;
@@ -71,12 +65,10 @@ class FluxLogs {
     Hive.init(config.storagePath);
     Hive.registerAdapter(EventMessageAdapter());
     Hive.registerAdapter(LogLevelAdapter());
-    _queueBox = await Hive.openBox(_queueBoxName);
-    _processingBox = await Hive.openBox(_processingBoxName);
   }
 
   void _putEventToBox(EventMessage event) {
-    _queueBox.put(_uuid.v4(), event);
+    _queue.addEvent(event);
   }
 
   _log(
