@@ -7,7 +7,7 @@ part 'event_message.g.dart';
 @HiveType(typeId: HiveTypeIds.eventMessage)
 class EventMessage extends HiveObject {
   @HiveField(0)
-  final DateTime timestamp;
+  final int timestamp;
   @HiveField(1)
   final LogLevel logLevel;
   @HiveField(2)
@@ -47,4 +47,15 @@ class EventMessage extends HiveObject {
     tags: tags,
     meta: meta,
   );
+
+  Map<String, dynamic> toJson() => {
+    "timestamp": timestamp,
+    "logLevel": logLevel.value,
+    "platform": platform,
+    "bundleId": bundleId,
+    "deviceId": deviceId,
+    "message": message,
+    "tags": tags,
+    "meta": meta,
+  };
 }

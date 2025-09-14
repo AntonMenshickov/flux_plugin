@@ -62,7 +62,7 @@ class ReliableBatchQueue {
 
   Future<void> _restoreProcessing() async {
     final Iterable<MapEntry<int, EventMessage>> processingKeys = _processingBox
-        .toMap()
+        .toMap().cast<int, EventMessage>()
         .entries
         .cast();
     for (var entry in processingKeys) {
@@ -129,12 +129,12 @@ class ReliableBatchQueue {
     try {
       await _api.uploadEventsBatch(batch);
       await _processingBox.clear();
+      print('[ReliableBatchQueue] Flushed ${batch.length} messages');
     } catch (err) {
       print(
         '[ReliableBatchQueue] error while flushing messages to database\n$err',
       );
     } finally {
-      print('[ReliableBatchQueue] Flushed ${batch.length} messages');
       _flushing = false;
     }
   }

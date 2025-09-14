@@ -2,6 +2,7 @@ import 'package:flux_plugin/extensions/string_extension.dart';
 import 'package:flux_plugin/model/event_message.dart';
 import 'package:flux_plugin/model/log_level.dart';
 import 'package:flux_plugin/reliable_batch_queue/reliable_batch_queue.dart';
+import 'package:flux_plugin/utils/high_precision_time.dart';
 import 'package:flux_plugin/utils/printer.dart';
 
 import 'api/api.dart';
@@ -16,6 +17,9 @@ class FluxLogsConfig {
   ///Unique device identifier
   final String deviceId;
 
+  ///Log levels that will be sent to server
+  final Set<LogLevel> sendLogLevels;
+
   ///when release mode enabled logs will not be printer. Only sending to server
   final bool releaseMode;
 
@@ -23,6 +27,7 @@ class FluxLogsConfig {
     required this.platform,
     required this.bundleId,
     required this.deviceId,
+    this.sendLogLevels = const {LogLevel.error},
     this.releaseMode = true,
   });
 }
@@ -35,11 +40,13 @@ class FluxLogs {
   late final Api _api;
   late final ReliableBatchQueue _queue;
   late final Printer _printer;
+  late final HighPrecisionTime _highPrecisionTime;
 
   late final String _platform;
   late final String _bundleId;
   late final String _deviceId;
   late final bool _releaseMode;
+  late final List<LogLevel> _sendLogLevels;
 
   Future<void> init(
     FluxLogsConfig config,
@@ -50,11 +57,13 @@ class FluxLogs {
     _api = Api(apiConfig);
     _printer = Printer(printerOptions ?? PrinterOptions());
     _queue = ReliableBatchQueue(queueOptions, _api);
+    _highPrecisionTime = HighPrecisionTime();
 
     _platform = config.platform;
     _bundleId = config.bundleId;
     _deviceId = config.deviceId;
     _releaseMode = config.releaseMode;
+    _sendLogLevels = config.sendLogLevels.toList();
 
     await _queue.init();
   }
@@ -77,18 +86,20 @@ class FluxLogs {
     if (!_releaseMode) {
       _printer.log(message, logLevel, uniqueTags, stackTrace);
     }
-    final EventMessage eventMessage = EventMessage(
-      timestamp: DateTime.timestamp(),
-      logLevel: logLevel,
-      platform: _platform,
-      bundleId: _bundleId,
-      deviceId: _deviceId,
-      message: message,
-      tags: uniqueTags,
-      meta: meta,
-      stackTrace: stackTrace?.toString(),
-    );
-    _putEventToBox(eventMessage);
+    if (_sendLogLevels.contains(logLevel)) {
+      final EventMessage eventMessage = EventMessage(
+        timestamp: _highPrecisionTime.now(),
+        logLevel: logLevel,
+        platform: _platform,
+        bundleId: _bundleId,
+        deviceId: _deviceId,
+        message: message,
+        tags: uniqueTags,
+        meta: meta,
+        stackTrace: stackTrace?.toString(),
+      );
+      _putEventToBox(eventMessage);
+    }
   }
 
   info(

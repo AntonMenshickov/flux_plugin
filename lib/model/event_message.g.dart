@@ -17,7 +17,7 @@ class EventMessageAdapter extends TypeAdapter<EventMessage> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return EventMessage(
-      timestamp: fields[0] as DateTime,
+      timestamp: fields[0] as int,
       logLevel: fields[1] as LogLevel,
       platform: fields[2] as String,
       bundleId: fields[3] as String,
