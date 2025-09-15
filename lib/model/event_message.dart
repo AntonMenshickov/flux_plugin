@@ -46,6 +46,7 @@ class EventMessage extends HiveObject {
     message: message,
     tags: tags,
     meta: meta,
+    stackTrace: stackTrace,
   );
 
   Map<String, dynamic> toJson() => {
@@ -57,5 +58,6 @@ class EventMessage extends HiveObject {
     "message": message,
     "tags": tags,
     "meta": meta,
+    "stackTrace": stackTrace,
   };
 }

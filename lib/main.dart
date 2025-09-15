@@ -20,7 +20,10 @@ void main() async {
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiNjhjNDYzYThjYWNhYmMzNmI5NGFhZjc0IiwiaWF0IjoxNzU3NzAxMDMzLCJleHAiOjQ5MTM0NjEwMzN9.1MVZWfUXLlieQpozW7GGzoQI8kGM9imB7yz2RrKeALQ',
       url: 'http://localhost:4000',
     ),
-    ReliableBatchQueueOptions(storagePath: Directory.current.path),
+    ReliableBatchQueueOptions(
+      storagePath: Directory.current.path,
+      flushIntervalMs: 1000,
+    ),
     PrinterOptions(
       maxLineLength: 180,
       chunkSize: 4000,
@@ -44,6 +47,7 @@ void main() async {
   FluxLogs.instance.debug('test message\nwith a two lines');
   FluxLogs.instance.debug('\x1B[33mtesting trim \x1B[0mANSI escape sequences');
   FluxLogs.instance.debug(' testing tabulation\n  and spaces');
+  FluxLogs.instance.debug('Testing metadata', meta: {'vehicle': 'A 000 AA 00'});
   // final start = DateTime.timestamp();
   // for (int i = 0; i < 1000; i++) {
   //   FluxLogs.instance.info('$i', tags: ['test', 'debug']);
