@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flux_plugin/model/event_message.dart';
 import 'package:http/http.dart' as http;
@@ -30,13 +31,18 @@ class Api {
     final url = Uri.parse('$_url/api$apiPath');
     final jwtToken = _token;
 
+    final utf8Body = utf8.encode(body);
+
+    final gzipBody = gzip.encode(utf8Body);
+
     final response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $jwtToken',
+        'Content-Encoding': 'gzip',
       },
-      body: body,
+      body: gzipBody,
     );
 
     if (response.statusCode == 204) {
