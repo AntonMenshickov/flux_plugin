@@ -1,10 +1,6 @@
 import 'dart:io';
 
-import 'package:flux_plugin/api/api.dart';
 import 'package:flux_plugin/flux_plugin.dart';
-import 'package:flux_plugin/model/log_level.dart';
-import 'package:flux_plugin/reliable_batch_queue/reliable_batch_queue.dart';
-import 'package:flux_plugin/utils/printer.dart';
 
 void main() async {
   await FluxLogs.instance.init(
@@ -22,7 +18,7 @@ void main() async {
     ),
     ReliableBatchQueueOptions(
       storagePath: Directory.current.path,
-      flushIntervalMs: 1000,
+      flushInterval: Duration(seconds: 1),
     ),
     PrinterOptions(
       maxLineLength: 180,

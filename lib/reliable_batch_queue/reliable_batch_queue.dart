@@ -10,8 +10,8 @@ class ReliableBatchQueueOptions {
   ///amount of records that can be sent to server in one time
   final int batchSize;
 
-  ///interval in milliseconds when automatically flush logs to server
-  final int flushIntervalMs;
+  ///interval when automatically flush logs to server
+  final Duration flushInterval;
 
   ///Directory when events will be stored
   ///for flutter path_provider.getApplicationDocumentsDirectory can be used
@@ -19,7 +19,7 @@ class ReliableBatchQueueOptions {
 
   ReliableBatchQueueOptions({
     this.batchSize = 1000,
-    this.flushIntervalMs = 10000,
+    this.flushInterval = const Duration(seconds: 10),
     required this.storagePath,
   });
 }
@@ -34,7 +34,7 @@ class ReliableBatchQueue {
   late final Box<EventMessage> _processingBox;
 
   late final int _batchSize;
-  late final int _flushIntervalMs;
+  late final Duration _flushInterval;
   late final String _storagePath;
 
   int _sequenceKey = 0;
@@ -44,7 +44,7 @@ class ReliableBatchQueue {
   ReliableBatchQueue(ReliableBatchQueueOptions options, Api api)
     : _api = api,
       _batchSize = options.batchSize,
-      _flushIntervalMs = options.flushIntervalMs,
+      _flushInterval = options.flushInterval,
       _storagePath = options.storagePath;
 
   Future<void> init() async {
@@ -54,15 +54,13 @@ class ReliableBatchQueue {
     _queueBox = await Hive.openBox(_queueBoxName);
     _processingBox = await Hive.openBox(_processingBoxName);
     await _restoreProcessing();
-    _flushTimer ??= Timer.periodic(
-      Duration(milliseconds: _flushIntervalMs),
-      (_) => _flush(),
-    );
+    _flushTimer ??= Timer.periodic(_flushInterval, (_) => _flush());
   }
 
   Future<void> _restoreProcessing() async {
     final Iterable<MapEntry<int, EventMessage>> processingKeys = _processingBox
-        .toMap().cast<int, EventMessage>()
+        .toMap()
+        .cast<int, EventMessage>()
         .entries
         .cast();
     for (var entry in processingKeys) {
