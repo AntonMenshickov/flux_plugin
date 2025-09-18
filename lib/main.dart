@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flux_plugin/flux_plugin.dart';
 
 void main() async {
-  await FluxLogs.instance.init(
+  final FluxLogs flux = FluxLogs.instance;
+  await flux.init(
     FluxLogsConfig(
       platform: 'android',
       bundleId: 'com.android.app',
@@ -26,31 +27,34 @@ void main() async {
       removeEmptyLines: false,
     ),
   );
-  FluxLogs.instance.info(
+
+  flux.setMetaKey('deviceId', 'Unique device id');
+
+  flux.info(
     'test message with duplicate tags trim\n\nand with empty lines\n\ntest\n\nend',
     tags: ['test', 'debug', 'debug'],
   );
-  FluxLogs.instance.info(
+  flux.info(
     'test message\nwith two lines and two tags',
     tags: ['test', 'debug', 'debug'],
   );
-  FluxLogs.instance.warn('test message\nwith a two lines');
-  FluxLogs.instance.error(
+  flux.warn('test message\nwith a two lines');
+  flux.error(
     'test message with stackTrace and 100 tags\n',
     tags: List.generate(100, (i) => 'tag $i'),
     stackTrace: StackTrace.current,
   );
-  FluxLogs.instance.debug('test message\nwith a two lines');
-  FluxLogs.instance.debug('\x1B[33mtesting trim \x1B[0mANSI escape sequences');
-  FluxLogs.instance.debug(' testing tabulation\n  and spaces');
-  FluxLogs.instance.debug('Testing metadata', meta: {'vehicle': 'A 000 AA 00'});
+  flux.debug('test message\nwith a two lines');
+  flux.debug('\x1B[33mtesting trim \x1B[0mANSI escape sequences');
+  flux.debug(' testing tabulation\n  and spaces');
+  flux.debug('Testing metadata', meta: {'vehicle': 'A 000 AA 00'});
   // final start = DateTime.timestamp();
   // for (int i = 0; i < 1000; i++) {
-  //   FluxLogs.instance.info('$i', tags: ['test', 'debug']);
+  //   flux.info('$i', tags: ['test', 'debug']);
   // }
   // final end = DateTime.timestamp();
   //
-  // FluxLogs.instance.debug(
+  // flux.debug(
   //   'Operations took ${(end.millisecondsSinceEpoch - start.millisecondsSinceEpoch) / 1000}s.',
   // );
 }

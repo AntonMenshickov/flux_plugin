@@ -47,13 +47,14 @@ class FluxLogs {
   late final String _deviceId;
   late final bool _releaseMode;
   late final List<LogLevel> _sendLogLevels;
+  final Map<String, String> _meta = {};
 
   Future<void> init(
-      FluxLogsConfig config,
-      ApiConfig apiConfig,
-      ReliableBatchQueueOptions queueOptions, [
-        PrinterOptions? printerOptions,
-      ]) async {
+    FluxLogsConfig config,
+    ApiConfig apiConfig,
+    ReliableBatchQueueOptions queueOptions, [
+    PrinterOptions? printerOptions,
+  ]) async {
     _api = Api(apiConfig);
     _printer = Printer(printerOptions ?? PrinterOptions());
     _queue = ReliableBatchQueue(queueOptions, _api);
@@ -72,13 +73,17 @@ class FluxLogs {
     _queue.addEvent(event);
   }
 
+  void setMetaKey(String key, String value) => _meta[key.trim()] = value.trim();
+
+  String? getMetaValueByKey(String key) => _meta[key.trim()];
+
   _log(
-      String message,
-      LogLevel logLevel, [
-        List<String> tags = const [],
-        Map<String, String> meta = const {},
-        StackTrace? stackTrace,
-      ]) {
+    String message,
+    LogLevel logLevel, [
+    List<String> tags = const [],
+    Map<String, String> meta = const {},
+    StackTrace? stackTrace,
+  ]) {
     final List<String> uniqueTags = tags
         .map((t) => t.trim().removeLineBreaks())
         .toSet()
@@ -86,6 +91,7 @@ class FluxLogs {
     if (!_releaseMode) {
       _printer.log(message, logLevel, uniqueTags, stackTrace);
     }
+    final Map<String, String> metaData = {..._meta, ...meta};
     if (_sendLogLevels.contains(logLevel)) {
       final EventMessage eventMessage = EventMessage(
         timestamp: _highPrecisionTime.now(),
@@ -95,7 +101,7 @@ class FluxLogs {
         deviceId: _deviceId,
         message: message,
         tags: uniqueTags,
-        meta: meta,
+        meta: metaData,
         stackTrace: stackTrace?.toString(),
       );
       _putEventToBox(eventMessage);
@@ -103,38 +109,38 @@ class FluxLogs {
   }
 
   info(
-      String message, {
-        List<String> tags = const [],
-        Map<String, String> meta = const {},
-        StackTrace? stackTrace,
-      }) {
+    String message, {
+    List<String> tags = const [],
+    Map<String, String> meta = const {},
+    StackTrace? stackTrace,
+  }) {
     _log(message, LogLevel.info, tags, meta, stackTrace);
   }
 
   warn(
-      String message, [
-        List<String> tags = const [],
-        Map<String, String> meta = const {},
-        StackTrace? stackTrace,
-      ]) {
+    String message, [
+    List<String> tags = const [],
+    Map<String, String> meta = const {},
+    StackTrace? stackTrace,
+  ]) {
     _log(message, LogLevel.warn, tags, meta, stackTrace);
   }
 
   error(
-      String message, {
-        List<String> tags = const [],
-        Map<String, String> meta = const {},
-        StackTrace? stackTrace,
-      }) {
+    String message, {
+    List<String> tags = const [],
+    Map<String, String> meta = const {},
+    StackTrace? stackTrace,
+  }) {
     _log(message, LogLevel.error, tags, meta, stackTrace);
   }
 
   debug(
-      String message, {
-        List<String> tags = const [],
-        Map<String, String> meta = const {},
-        StackTrace? stackTrace,
-      }) {
+    String message, {
+    List<String> tags = const [],
+    Map<String, String> meta = const {},
+    StackTrace? stackTrace,
+  }) {
     _log(message, LogLevel.debug, tags, meta, stackTrace);
   }
 }
