@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:flux_plugin/extensions/string_extension.dart';
-import 'package:flux_plugin/model/log_level.dart';
+import 'package:flux_plugin/src/extensions/string_extension.dart';
+import 'package:flux_plugin/src/model/log_level.dart';
 
 class PrinterOptions {
   ///maximum line length

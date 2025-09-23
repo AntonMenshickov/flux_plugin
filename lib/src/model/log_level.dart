@@ -1,4 +1,4 @@
-import 'package:flux_plugin/model/hive_type_ids.dart';
+import 'package:flux_plugin/src/model/hive_type_ids.dart';
 import 'package:hive/hive.dart';
 
 part 'log_level.g.dart';

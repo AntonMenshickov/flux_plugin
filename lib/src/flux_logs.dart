@@ -1,11 +1,11 @@
-import 'package:flux_plugin/extensions/string_extension.dart';
-import 'package:flux_plugin/model/event_message.dart';
-import 'package:flux_plugin/model/log_level.dart';
-import 'package:flux_plugin/reliable_batch_queue/reliable_batch_queue.dart';
-import 'package:flux_plugin/utils/high_precision_time.dart';
-import 'package:flux_plugin/utils/printer.dart';
+import 'package:flux_plugin/src/api/api.dart';
+import 'package:flux_plugin/src/extensions/string_extension.dart';
+import 'package:flux_plugin/src/model/event_message.dart';
+import 'package:flux_plugin/src/model/log_level.dart';
+import 'package:flux_plugin/src/reliable_batch_queue/reliable_batch_queue.dart';
+import 'package:flux_plugin/src/utils/high_precision_time.dart';
+import 'package:flux_plugin/src/utils/printer.dart';
 
-import 'api/api.dart';
 
 class FluxLogsConfig {
   ///platform e.g. android, ios
@@ -42,9 +42,6 @@ class FluxLogs {
   late final Printer _printer;
   late final HighPrecisionTime _highPrecisionTime;
 
-  late final String _platform;
-  late final String _bundleId;
-  late final String _deviceId;
   late final bool _releaseMode;
   late final List<LogLevel> _sendLogLevels;
   final Map<String, String> _meta = {};
@@ -57,12 +54,15 @@ class FluxLogs {
   ]) async {
     _api = Api(apiConfig);
     _printer = Printer(printerOptions ?? PrinterOptions());
-    _queue = ReliableBatchQueue(queueOptions, _api);
+    _queue = ReliableBatchQueue(
+      queueOptions,
+      _api,
+      platform: config.platform,
+      bundleId: config.bundleId,
+      deviceId: config.deviceId,
+    );
     _highPrecisionTime = HighPrecisionTime();
 
-    _platform = config.platform;
-    _bundleId = config.bundleId;
-    _deviceId = config.deviceId;
     _releaseMode = config.releaseMode;
     _sendLogLevels = config.sendLogLevels.toList();
 
@@ -96,9 +96,6 @@ class FluxLogs {
       final EventMessage eventMessage = EventMessage(
         timestamp: _highPrecisionTime.now(),
         logLevel: logLevel,
-        platform: _platform,
-        bundleId: _bundleId,
-        deviceId: _deviceId,
         message: message,
         tags: uniqueTags,
         meta: metaData,

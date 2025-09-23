@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flux_plugin/flux_plugin.dart';
 
+
 void main() async {
   final FluxLogs flux = FluxLogs.instance;
   await flux.init(
