@@ -1,7 +1,7 @@
 name: flux_plugin
 description: "Flux logs client library"
 version: 0.0.1
-homepage:
+homepage: "https://github.com/AntonMenshickov/flux_plugin"
 
 environment:
   sdk: ^3.9.2
