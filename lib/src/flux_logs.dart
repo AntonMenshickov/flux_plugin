@@ -1,5 +1,6 @@
 import 'package:flux_plugin/src/api/api.dart';
 import 'package:flux_plugin/src/extensions/string_extension.dart';
+import 'package:flux_plugin/src/model/device_info.dart';
 import 'package:flux_plugin/src/model/event_message.dart';
 import 'package:flux_plugin/src/model/log_level.dart';
 import 'package:flux_plugin/src/reliable_batch_queue/reliable_batch_queue.dart';
@@ -8,14 +9,8 @@ import 'package:flux_plugin/src/utils/printer.dart';
 import 'package:flux_plugin/src/websocket/websocket_service.dart';
 
 class FluxLogsConfig {
-  ///platform e.g. android, ios
-  final String platform;
-
-  ///App bundle id e.g. com.example.app
-  final String bundleId;
-
-  ///Unique device identifier
-  final String deviceId;
+  ///Info about device
+  final DeviceInfo deviceInfo;
 
   ///Log levels that will be sent to server
   final Set<LogLevel> sendLogLevels;
@@ -24,9 +19,7 @@ class FluxLogsConfig {
   final bool releaseMode;
 
   const FluxLogsConfig({
-    required this.platform,
-    required this.bundleId,
-    required this.deviceId,
+    required this.deviceInfo,
     this.sendLogLevels = const {LogLevel.error},
     this.releaseMode = true,
   });
@@ -58,9 +51,7 @@ class FluxLogs {
     _queue = ReliableBatchQueue(
       queueOptions,
       _api,
-      platform: config.platform,
-      bundleId: config.bundleId,
-      deviceId: config.deviceId,
+      deviceInfo: config.deviceInfo,
     );
     _highPrecisionTime = HighPrecisionTime();
 
@@ -72,14 +63,12 @@ class FluxLogs {
       host: apiUri.host,
       port: apiUri.port,
       path: '/ws',
-      queryParameters: {
-        'platform': config.platform,
-        'bundleId': config.bundleId,
-        'deviceId': config.deviceId,
-        'token': apiConfig.token,
-      },
     );
-    _webSocketService = WebSocketService(websocketUri);
+    _webSocketService = WebSocketService(
+      uri: websocketUri,
+      deviceInfo: config.deviceInfo,
+      token: apiConfig.token,
+    );
     _webSocketService.connect();
 
     await _queue.init();

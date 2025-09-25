@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flux_plugin/flux_plugin.dart';
 import 'package:flux_plugin/src/model/event_message.dart';
 import 'package:http/http.dart' as http;
 
@@ -22,17 +23,13 @@ class Api {
 
   Future<void> uploadEventsBatch({
     required Iterable<EventMessage> events,
-    required String platform,
-    required String bundleId,
-    required String deviceId,
+    required DeviceInfo deviceInfo,
   }) async {
     return _sendPostRequest(
       '/events/add',
       jsonEncode({
         "events": events.map((e) => e.toJson()).toList(),
-        "platform": platform,
-        "bundleId": bundleId,
-        "deviceId": deviceId,
+        ...deviceInfo.toJson(),
       }),
     );
   }

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flux_plugin/flux_plugin.dart';
 import 'package:flux_plugin/src/api/api.dart';
+import 'package:flux_plugin/src/model/device_info.dart';
 import 'package:flux_plugin/src/model/event_message.dart';
 import 'package:flux_plugin/src/model/log_level.dart';
 import 'package:hive/hive.dart';
@@ -36,9 +38,7 @@ class ReliableBatchQueue {
   late final int _batchSize;
   late final Duration _flushInterval;
   late final String _storagePath;
-  late final String _platform;
-  late final String _bundleId;
-  late final String _deviceId;
+  late final DeviceInfo _deviceInfo;
 
   int _sequenceKey = 0;
   bool _flushing = false;
@@ -47,16 +47,12 @@ class ReliableBatchQueue {
   ReliableBatchQueue(
     ReliableBatchQueueOptions options,
     Api api, {
-    required String platform,
-    required String bundleId,
-    required String deviceId,
+    required DeviceInfo deviceInfo,
   }) : _api = api,
        _batchSize = options.batchSize,
        _flushInterval = options.flushInterval,
        _storagePath = options.storagePath,
-       _platform = platform,
-       _bundleId = bundleId,
-       _deviceId = deviceId;
+       _deviceInfo = deviceInfo;
 
   Future<void> init() async {
     Hive.init(_storagePath);
@@ -134,18 +130,11 @@ class ReliableBatchQueue {
       return;
     }
     try {
-      await _api.uploadEventsBatch(
-        events: batch,
-        platform: _platform,
-        bundleId: _bundleId,
-        deviceId: _deviceId,
-      );
+      await _api.uploadEventsBatch(events: batch, deviceInfo: _deviceInfo);
       await _processingBox.clear();
       print('[$ReliableBatchQueue] Flushed ${batch.length} messages');
     } catch (err) {
-      print(
-        '[$ReliableBatchQueue] Failed to flush messages\n$err',
-      );
+      print('[$ReliableBatchQueue] Failed to flush messages\n$err');
     } finally {
       _flushing = false;
     }

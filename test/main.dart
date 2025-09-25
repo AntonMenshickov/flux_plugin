@@ -2,14 +2,17 @@ import 'dart:io';
 
 import 'package:flux_plugin/flux_plugin.dart';
 
-
 void main() async {
   final FluxLogs flux = FluxLogs.instance;
   await flux.init(
     FluxLogsConfig(
-      platform: 'android',
-      bundleId: 'com.android.app',
-      deviceId: 'abcd',
+      deviceInfo: DeviceInfo(
+        platform: 'android',
+        bundleId: 'com.android.app',
+        deviceId: 'abcd',
+        deviceName: 'ANTON PC',
+        osName: 'windows 11'
+      ),
       releaseMode: false,
       sendLogLevels: {...LogLevel.values},
     ),

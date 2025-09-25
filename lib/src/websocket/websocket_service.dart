@@ -2,8 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flux_plugin/flux_plugin.dart';
+
 class WebSocketService {
-  final Uri uri;
+  late final Uri _uri;
+  late final DeviceInfo _deviceInfo;
+  late final String _token;
   WebSocket? _socket;
   final _controller = StreamController<String>.broadcast();
 
@@ -19,7 +23,13 @@ class WebSocketService {
   bool get isConnected =>
       _socket != null && _socket!.readyState == WebSocket.open;
 
-  WebSocketService(this.uri);
+  WebSocketService({
+    required Uri uri,
+    required DeviceInfo deviceInfo,
+    required String token,
+  }) : _uri = uri,
+       _deviceInfo = deviceInfo,
+       _token = token;
 
   Future<void> connect() async {
     _manuallyClosed = false;
@@ -37,9 +47,12 @@ class WebSocketService {
     while (!_manuallyClosed) {
       try {
         print(
-          '[$WebSocketService] Connecting to $uri… (attempt ${_attempt + 1})',
+          '[$WebSocketService] Connecting to $_uri… (attempt ${_attempt + 1})',
         );
-        _socket = await WebSocket.connect(uri.toString());
+        _socket = await WebSocket.connect(
+          _uri.toString(),
+          headers: {..._deviceInfo.toJson(), 'token': _token},
+        );
         print('[$WebSocketService] Connected to websocket');
         _attempt = 0;
         _socket!.listen(
