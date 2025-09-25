@@ -5,7 +5,7 @@ import 'package:flux_plugin/src/model/log_level.dart';
 import 'package:flux_plugin/src/reliable_batch_queue/reliable_batch_queue.dart';
 import 'package:flux_plugin/src/utils/high_precision_time.dart';
 import 'package:flux_plugin/src/utils/printer.dart';
-
+import 'package:flux_plugin/src/websocket/websocket_service.dart';
 
 class FluxLogsConfig {
   ///platform e.g. android, ios
@@ -41,6 +41,7 @@ class FluxLogs {
   late final ReliableBatchQueue _queue;
   late final Printer _printer;
   late final HighPrecisionTime _highPrecisionTime;
+  late final WebSocketService _webSocketService;
 
   late final bool _releaseMode;
   late final List<LogLevel> _sendLogLevels;
@@ -65,6 +66,21 @@ class FluxLogs {
 
     _releaseMode = config.releaseMode;
     _sendLogLevels = config.sendLogLevels.toList();
+    final Uri apiUri = Uri.parse(apiConfig.url);
+    final Uri websocketUri = Uri(
+      scheme: apiUri.scheme == 'https' ? 'wss' : 'ws',
+      host: apiUri.host,
+      port: apiUri.port,
+      path: '/ws',
+      queryParameters: {
+        'platform': config.platform,
+        'bundleId': config.bundleId,
+        'deviceId': config.deviceId,
+        'token': apiConfig.token,
+      },
+    );
+    _webSocketService = WebSocketService(websocketUri);
+    _webSocketService.connect();
 
     await _queue.init();
   }
@@ -102,6 +118,7 @@ class FluxLogs {
         stackTrace: stackTrace?.toString(),
       );
       _putEventToBox(eventMessage);
+      // _webSocketService.send({'type': 0, 'payload': eventMessage.toJson()});
     }
   }
 

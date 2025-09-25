@@ -133,8 +133,6 @@ class ReliableBatchQueue {
       _flushing = false;
       return;
     }
-    print('[ReliableBatchQueue] Flushing ${batch.length} messages');
-
     try {
       await _api.uploadEventsBatch(
         events: batch,
@@ -143,10 +141,10 @@ class ReliableBatchQueue {
         deviceId: _deviceId,
       );
       await _processingBox.clear();
-      print('[ReliableBatchQueue] Flushed ${batch.length} messages');
+      print('[$ReliableBatchQueue] Flushed ${batch.length} messages');
     } catch (err) {
       print(
-        '[ReliableBatchQueue] error while flushing messages to database\n$err',
+        '[$ReliableBatchQueue] Failed to flush messages\n$err',
       );
     } finally {
       _flushing = false;
