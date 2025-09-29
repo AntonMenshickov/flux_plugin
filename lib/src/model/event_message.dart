@@ -41,8 +41,8 @@ class EventMessage extends HiveObject {
     "timestamp": timestamp,
     "logLevel": logLevel.value,
     "message": message,
-    "tags": tags,
-    "meta": meta,
-    "stackTrace": stackTrace,
+    if (tags.isNotEmpty) "tags": tags,
+    if (meta.isNotEmpty) "meta": meta,
+    if (stackTrace != null) "stackTrace": stackTrace,
   };
 }
