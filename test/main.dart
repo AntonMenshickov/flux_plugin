@@ -8,22 +8,22 @@ void main() async {
     FluxLogsConfig(
       deviceInfo: DeviceInfo(
         platform: 'android',
-        bundleId: 'com.android.app',
+        bundleId: 'com.example.android',
         deviceId: 'abcd',
         deviceName: 'ANTON PC',
-        osName: 'windows 11'
+        osName: 'windows 11',
       ),
       releaseMode: false,
       sendLogLevels: {...LogLevel.values},
     ),
     ApiConfig(
       token:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiNjhjNDYzYThjYWNhYmMzNmI5NGFhZjc0IiwiaWF0IjoxNzU3NzAxMDMzLCJleHAiOjQ5MTM0NjEwMzN9.1MVZWfUXLlieQpozW7GGzoQI8kGM9imB7yz2RrKeALQ',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbklkIjoiNjhlMjIwOTkyMmRmMjk3NjQ5ZjY0MGEwIiwiaWF0IjoxNzU5NjQ5OTQ1LCJleHAiOjQ5MTU0MDk5NDV9.xYWzbpLbNDQbloOo-ciRAzZLp6YbZjge99lyimSKbE0',
       url: 'http://localhost:4000',
     ),
     ReliableBatchQueueOptions(
       storagePath: Directory.current.path,
-      flushInterval: Duration(seconds: 1),
+      flushInterval: Duration(seconds: 30),
     ),
     PrinterOptions(
       maxLineLength: 180,
@@ -33,7 +33,6 @@ void main() async {
   );
 
   flux.setMetaKey('deviceId', 'Unique device id');
-
   flux.info(
     'test message with duplicate tags trim\n\nand with empty lines\n\ntest\n\nend',
     tags: ['test', 'debug', 'debug'],
@@ -43,6 +42,8 @@ void main() async {
     tags: ['test', 'debug', 'debug'],
   );
   flux.warn('test message\nwith a two lines');
+  flux.warn('test message\nwith a two lines');
+  flux.error('test long message with big text ' * 100);
   flux.error(
     'test message with stackTrace and 100 tags\n',
     tags: List.generate(100, (i) => 'tag $i'),

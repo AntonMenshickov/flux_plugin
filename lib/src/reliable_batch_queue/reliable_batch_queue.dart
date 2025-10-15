@@ -3,9 +3,7 @@ import 'dart:math';
 
 import 'package:flux_plugin/flux_plugin.dart';
 import 'package:flux_plugin/src/api/api.dart';
-import 'package:flux_plugin/src/model/device_info.dart';
 import 'package:flux_plugin/src/model/event_message.dart';
-import 'package:flux_plugin/src/model/log_level.dart';
 import 'package:hive/hive.dart';
 
 class ReliableBatchQueueOptions {
@@ -137,6 +135,7 @@ class ReliableBatchQueue {
       print('[$ReliableBatchQueue] Failed to flush messages\n$err');
     } finally {
       _flushing = false;
+      _processQueue();
     }
   }
 }
