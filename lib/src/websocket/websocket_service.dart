@@ -51,7 +51,11 @@ class WebSocketService {
         );
         _socket = await WebSocket.connect(
           _uri.toString(),
-          headers: {..._deviceInfo.toJson(), 'token': _token},
+          headers: {
+            'client': 'device',
+            'token': _token,
+            ..._deviceInfo.toJson(),
+          },
         );
         print('[$WebSocketService] Connected to websocket');
         _attempt = 0;
