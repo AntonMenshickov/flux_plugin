@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flux_plugin/src/api/api.dart';
 import 'package:flux_plugin/src/extensions/string_extension.dart';
 import 'package:flux_plugin/src/model/device_info.dart';
 import 'package:flux_plugin/src/model/event_message.dart';
 import 'package:flux_plugin/src/model/log_level.dart';
+import 'package:flux_plugin/src/model/ws_message.dart';
 import 'package:flux_plugin/src/reliable_batch_queue/reliable_batch_queue.dart';
 import 'package:flux_plugin/src/utils/high_precision_time.dart';
 import 'package:flux_plugin/src/utils/printer.dart';
@@ -39,6 +43,9 @@ class FluxLogs {
   late final bool _releaseMode;
   late final List<LogLevel> _sendLogLevels;
   final Map<String, String> _meta = {};
+  bool _streamMode = false;
+
+  late final StreamSubscription<dynamic> _wsMessagesSubscription;
 
   Future<void> init(
     FluxLogsConfig config,
@@ -70,8 +77,26 @@ class FluxLogs {
       token: apiConfig.token,
     );
     _webSocketService.connect();
+    _wsMessagesSubscription = _webSocketService.messages.listen(_onWsMessage);
 
     await _queue.init();
+  }
+
+  Future<void> dispose() async {
+    _wsMessagesSubscription.cancel();
+    await _webSocketService.close();
+  }
+
+  void _onWsMessage(dynamic data) {
+    if (data is String) {
+      final WsMessage message = WsMessage.fromJson(jsonDecode(data));
+      switch (message.type) {
+        case WsMessageType.startEventsStream:
+          _streamMode = true;
+        case WsMessageType.stopEventsStream:
+          _streamMode = false;
+      }
+    }
   }
 
   void _putEventToBox(EventMessage event) {
@@ -106,8 +131,11 @@ class FluxLogs {
         meta: metaData,
         stackTrace: stackTrace?.toString(),
       );
-      _putEventToBox(eventMessage);
-      // _webSocketService.send({'type': 0, 'payload': eventMessage.toJson()});
+      if (_streamMode && _webSocketService.isConnected) {
+        _webSocketService.send({'type': 0, 'payload': eventMessage.toJson()});
+      } else {
+        _putEventToBox(eventMessage);
+      }
     }
   }
 
