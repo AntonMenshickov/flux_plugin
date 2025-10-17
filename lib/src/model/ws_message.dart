@@ -1,6 +1,7 @@
 enum WsMessageType {
   startEventsStream,
-  stopEventsStream;
+  stopEventsStream,
+  keepEventsStream;
 
   factory WsMessageType.fromJson(int val) {
     switch (val) {
@@ -8,6 +9,8 @@ enum WsMessageType {
         return WsMessageType.startEventsStream;
       case 1:
         return WsMessageType.stopEventsStream;
+      case 4:
+        return WsMessageType.keepEventsStream;
       default:
         throw Exception('Unknown WsMessageType value $val');
     }

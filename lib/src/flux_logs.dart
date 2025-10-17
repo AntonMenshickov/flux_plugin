@@ -43,7 +43,9 @@ class FluxLogs {
   late final bool _releaseMode;
   late final List<LogLevel> _sendLogLevels;
   final Map<String, String> _meta = {};
+
   bool _streamMode = false;
+  Timer? _resetStreamModeTimer;
 
   late final StreamSubscription<dynamic> _wsMessagesSubscription;
 
@@ -93,10 +95,30 @@ class FluxLogs {
       switch (message.type) {
         case WsMessageType.startEventsStream:
           _streamMode = true;
+          _startResetStreamModeTimer();
+          break;
         case WsMessageType.stopEventsStream:
+          _removeResetStreamModeTimer();
           _streamMode = false;
+          break;
+        case WsMessageType.keepEventsStream:
+          _startResetStreamModeTimer();
+          break;
       }
     }
+  }
+
+  void _removeResetStreamModeTimer() {
+    _resetStreamModeTimer?.cancel();
+    _resetStreamModeTimer = null;
+  }
+
+  void _startResetStreamModeTimer() {
+    _resetStreamModeTimer?.cancel();
+    _resetStreamModeTimer = Timer(Duration(seconds: 10), () {
+      _streamMode = false;
+      _resetStreamModeTimer = null;
+    });
   }
 
   void _putEventToBox(EventMessage event) {
@@ -149,11 +171,11 @@ class FluxLogs {
   }
 
   warn(
-    String message, [
+    String message, {
     List<String> tags = const [],
     Map<String, String> meta = const {},
     StackTrace? stackTrace,
-  ]) {
+  }) {
     _log(message, LogLevel.warn, tags, meta, stackTrace);
   }
 
