@@ -9,9 +9,11 @@ class WebSocketService {
   late final DeviceInfo _deviceInfo;
   late final String _token;
   WebSocket? _socket;
-  final _controller = StreamController<String>.broadcast();
+  final _messagesStreamController = StreamController<String>.broadcast();
+  final _onConnectStreamController = StreamController<void>.broadcast();
 
-  Stream<String> get messages => _controller.stream;
+  Stream<String> get messages => _messagesStreamController.stream;
+  Stream<void> get onConnect => _onConnectStreamController.stream;
 
   bool _manuallyClosed = false;
 
@@ -57,10 +59,11 @@ class WebSocketService {
             ..._deviceInfo.toJson(),
           },
         );
+        _onConnectStreamController.add(null);
         print('[$WebSocketService] Connected to websocket');
         _attempt = 0;
         _socket!.listen(
-          (data) => _controller.add(data),
+          (data) => _messagesStreamController.add(data),
           onDone: _handleClose,
           onError: _handleError,
           cancelOnError: true,
@@ -110,6 +113,7 @@ class WebSocketService {
   Future<void> close() async {
     _manuallyClosed = true;
     await _socket?.close();
-    await _controller.close();
+    await _onConnectStreamController.close();
+    await _messagesStreamController.close();
   }
 }

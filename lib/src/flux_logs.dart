@@ -19,12 +19,16 @@ class FluxLogsConfig {
   ///Log levels that will be sent to server
   final Set<LogLevel> sendLogLevels;
 
+  ///allow socket connection
+  final bool enableSocketConnection;
+
   ///when release mode enabled logs will not be printer. Only sending to server
   final bool releaseMode;
 
   const FluxLogsConfig({
     required this.deviceInfo,
     this.sendLogLevels = const {LogLevel.error},
+    this.enableSocketConnection = true,
     this.releaseMode = true,
   });
 }
@@ -38,7 +42,7 @@ class FluxLogs {
   late final ReliableBatchQueue _queue;
   late final Printer _printer;
   late final HighPrecisionTime _highPrecisionTime;
-  late final WebSocketService _webSocketService;
+  late final WebSocketService? _webSocketService;
 
   late final bool _releaseMode;
   late final List<LogLevel> _sendLogLevels;
@@ -47,7 +51,8 @@ class FluxLogs {
   bool _streamMode = false;
   Timer? _resetStreamModeTimer;
 
-  late final StreamSubscription<dynamic> _wsMessagesSubscription;
+  late final StreamSubscription<String> _wsMessagesSubscription;
+  late final StreamSubscription<void> _wsConnectSubscription;
 
   Future<void> init(
     FluxLogsConfig config,
@@ -73,38 +78,43 @@ class FluxLogs {
       port: apiUri.port,
       path: '/ws',
     );
-    _webSocketService = WebSocketService(
-      uri: websocketUri,
-      deviceInfo: config.deviceInfo,
-      token: apiConfig.token,
-    );
-    _webSocketService.connect();
-    _wsMessagesSubscription = _webSocketService.messages.listen(_onWsMessage);
+    if (config.enableSocketConnection) {
+      final websocketService = WebSocketService(
+        uri: websocketUri,
+        deviceInfo: config.deviceInfo,
+        token: apiConfig.token,
+      );
+      _wsMessagesSubscription = websocketService.messages.listen(_onWsMessage);
+      _wsConnectSubscription = websocketService.onConnect.listen((_) => _updateMetaDataBySocket());
+      websocketService.connect();
+      _webSocketService = websocketService;
+    } else {
+      _webSocketService = null;
+    }
 
     await _queue.init();
   }
 
   Future<void> dispose() async {
     _wsMessagesSubscription.cancel();
-    await _webSocketService.close();
+    _wsConnectSubscription.cancel();
+    await _webSocketService?.close();
   }
 
-  void _onWsMessage(dynamic data) {
-    if (data is String) {
-      final WsMessage message = WsMessage.fromJson(jsonDecode(data));
-      switch (message.type) {
-        case WsMessageType.startEventsStream:
-          _streamMode = true;
-          _startResetStreamModeTimer();
-          break;
-        case WsMessageType.stopEventsStream:
-          _removeResetStreamModeTimer();
-          _streamMode = false;
-          break;
-        case WsMessageType.keepEventsStream:
-          _startResetStreamModeTimer();
-          break;
-      }
+  void _onWsMessage(String data) {
+    final WsMessage message = WsMessage.fromJson(jsonDecode(data));
+    switch (message.type) {
+      case WsMessageType.startEventsStream:
+        _streamMode = true;
+        _startResetStreamModeTimer();
+        break;
+      case WsMessageType.stopEventsStream:
+        _removeResetStreamModeTimer();
+        _streamMode = false;
+        break;
+      case WsMessageType.keepEventsStream:
+        _startResetStreamModeTimer();
+        break;
     }
   }
 
@@ -125,9 +135,19 @@ class FluxLogs {
     _queue.addEvent(event);
   }
 
-  void setMetaKey(String key, String value) => _meta[key.trim()] = value.trim();
+  void setMetaKey(String key, String value) {
+    _meta[key.trim()] = value.trim();
+    _updateMetaDataBySocket();
+  }
 
   String? getMetaValueByKey(String key) => _meta[key.trim()];
+
+  void _updateMetaDataBySocket() {
+    final webSocketService = _webSocketService;
+    if (webSocketService != null && webSocketService.isConnected) {
+      webSocketService.send({'type': 1, 'payload': _meta});
+    }
+  }
 
   _log(
     String message,
@@ -153,8 +173,8 @@ class FluxLogs {
         meta: metaData,
         stackTrace: stackTrace?.toString(),
       );
-      if (_streamMode && _webSocketService.isConnected) {
-        _webSocketService.send({'type': 0, 'payload': eventMessage.toJson()});
+      if (_streamMode && _webSocketService?.isConnected == true) {
+        _webSocketService?.send({'type': 0, 'payload': eventMessage.toJson()});
       } else {
         _putEventToBox(eventMessage);
       }
