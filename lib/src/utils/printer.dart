@@ -24,6 +24,7 @@ class Printer {
     LogLevel.info: '\x1B[34m',
     LogLevel.warn: '\x1B[33m',
     LogLevel.error: '\x1B[31m',
+    LogLevel.crash: '\x1B[2;31m',
     LogLevel.debug: '\x1B[1;35m',
   };
   static const String _whiteAnsiColorCode = '\x1B[37m';

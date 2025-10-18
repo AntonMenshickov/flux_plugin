@@ -21,6 +21,8 @@ class LogLevelAdapter extends TypeAdapter<LogLevel> {
         return LogLevel.error;
       case 3:
         return LogLevel.debug;
+      case 4:
+        return LogLevel.crash;
       default:
         return LogLevel.info;
     }
@@ -40,6 +42,9 @@ class LogLevelAdapter extends TypeAdapter<LogLevel> {
         break;
       case LogLevel.debug:
         writer.writeByte(3);
+        break;
+      case LogLevel.crash:
+        writer.writeByte(4);
         break;
     }
   }

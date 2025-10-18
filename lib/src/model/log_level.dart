@@ -12,7 +12,9 @@ enum LogLevel {
   @HiveField(2)
   error('error'),
   @HiveField(3)
-  debug('debug');
+  debug('debug'),
+  @HiveField(4)
+  crash('crash');
 
   final String value;
 

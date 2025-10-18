@@ -85,7 +85,9 @@ class FluxLogs {
         token: apiConfig.token,
       );
       _wsMessagesSubscription = websocketService.messages.listen(_onWsMessage);
-      _wsConnectSubscription = websocketService.onConnect.listen((_) => _updateMetaDataBySocket());
+      _wsConnectSubscription = websocketService.onConnect.listen(
+        (_) => _updateMetaDataBySocket(),
+      );
       websocketService.connect();
       _webSocketService = websocketService;
     } else {
@@ -215,5 +217,14 @@ class FluxLogs {
     StackTrace? stackTrace,
   }) {
     _log(message, LogLevel.debug, tags, meta, stackTrace);
+  }
+
+  crash(
+    String message, {
+    List<String> tags = const [],
+    Map<String, String> meta = const {},
+    StackTrace? stackTrace,
+  }) {
+    _log(message, LogLevel.crash, tags, meta, stackTrace);
   }
 }
