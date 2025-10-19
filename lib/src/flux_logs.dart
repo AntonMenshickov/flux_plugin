@@ -142,6 +142,11 @@ class FluxLogs {
     _updateMetaDataBySocket();
   }
 
+  void removeMetaKey(String key) {
+    _meta.remove(key.trim());
+    _updateMetaDataBySocket();
+  }
+
   String? getMetaValueByKey(String key) => _meta[key.trim()];
 
   void _updateMetaDataBySocket() {
