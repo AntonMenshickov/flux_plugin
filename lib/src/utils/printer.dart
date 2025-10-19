@@ -14,7 +14,7 @@ class PrinterOptions {
 
   const PrinterOptions({
     this.maxLineLength = 200,
-    this.chunkSize = 1000,
+    this.chunkSize = 512,
     this.removeEmptyLines = false,
   });
 }
