@@ -27,6 +27,7 @@ class ReliableBatchQueueOptions {
 class ReliableBatchQueue {
   static const String _queueBoxName = 'flux_logs_queue_box';
   static const String _processingBoxName = 'flux_logs_processing_box';
+  static const int _maxRetryDelaySeconds = 300;
 
   late final Api _api;
 
@@ -41,6 +42,10 @@ class ReliableBatchQueue {
   int _sequenceKey = 0;
   bool _flushing = false;
   Timer? _flushTimer;
+
+  bool _flushLocked = false;
+  int _retryDelay = 0;
+  Timer? _retryTimer;
 
   ReliableBatchQueue(
     ReliableBatchQueueOptions options,
@@ -117,8 +122,22 @@ class ReliableBatchQueue {
     return events;
   }
 
+  void _startRetryTimer() {
+    _retryTimer?.cancel();
+    _retryDelay = min(max(_retryDelay * 2, 1), _maxRetryDelaySeconds);
+    _flushLocked = true;
+    print(
+      '[$ReliableBatchQueue] Scheduled flush retry in $_retryDelay seconds',
+    );
+    _retryTimer = Timer(Duration(seconds: _retryDelay), () {
+      _flushLocked = false;
+      _retryTimer = null;
+      _flush();
+    });
+  }
+
   Future<void> _flush() async {
-    if (_flushing) return;
+    if (_flushing || _flushLocked) return;
     _flushing = true;
 
     final Iterable<EventMessage> batch = await _prepareBatch();
@@ -130,12 +149,14 @@ class ReliableBatchQueue {
     try {
       await _api.uploadEventsBatch(events: batch, deviceInfo: _deviceInfo);
       await _processingBox.clear();
+      _retryDelay = 0;
       print('[$ReliableBatchQueue] Flushed ${batch.length} messages');
+      _processQueue();
     } catch (err) {
       print('[$ReliableBatchQueue] Failed to flush messages\n$err');
+      _startRetryTimer();
     } finally {
       _flushing = false;
-      _processQueue();
     }
   }
 }
