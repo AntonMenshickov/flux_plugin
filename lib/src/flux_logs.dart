@@ -162,6 +162,7 @@ class FluxLogs {
     List<String> tags = const [],
     Map<String, String> meta = const {},
     StackTrace? stackTrace,
+    DateTime? timestamp,
   ]) {
     final List<String> uniqueTags = tags
         .map((t) => t.trim().removeLineBreaks())
@@ -173,7 +174,8 @@ class FluxLogs {
     final Map<String, String> metaData = {..._meta, ...meta};
     if (_sendLogLevels.contains(logLevel)) {
       final EventMessage eventMessage = EventMessage(
-        timestamp: _highPrecisionTime.now(),
+        timestamp:
+            timestamp?.microsecondsSinceEpoch ?? _highPrecisionTime.now(),
         logLevel: logLevel,
         message: message,
         tags: uniqueTags,
@@ -229,7 +231,8 @@ class FluxLogs {
     List<String> tags = const [],
     Map<String, String> meta = const {},
     StackTrace? stackTrace,
+    DateTime? timestamp,
   }) {
-    _log(message, LogLevel.crash, tags, meta, stackTrace);
+    _log(message, LogLevel.crash, tags, meta, stackTrace, timestamp);
   }
 }
