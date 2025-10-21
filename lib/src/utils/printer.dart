@@ -106,44 +106,35 @@ class Printer {
     final String label =
         '$_horizontalLine${level.value.capitalize()}${tagsLabel.isEmpty ? _horizontalLine : ''}$tagsLabel';
 
-    final buffer = StringBuffer();
-    void flush() {
-      if (buffer.isNotEmpty) {
-        final List<String> lines = buffer.toString().trimRight().split('\n');
-        buffer.clear();
-        for (String line in lines) {
-          // ignore: avoid_print
-          print(line);
-        }
-      }
-    }
-
-    buffer.writeln(
+    // ignore: avoid_print
+    print(
       '$colorCode$_upLeftCorner$label${_horizontalLine * (width + 2 - label.length)}$_upRightCorner$_resetAnsiCode',
     );
 
     for (final line in lines) {
-      buffer.writeln(
+      // ignore: avoid_print
+      print(
         '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
       );
     }
 
     if (stackTraceLines.isNotEmpty) {
-      buffer.writeln(
+      // ignore: avoid_print
+      print(
         '$colorCode$_middleLeftCorner$_horizontalLine$_stackTraceLabel${_horizontalLine * (width + 1 - _stackTraceLabel.length)}$_middleRightCorner$_resetAnsiCode',
       );
 
       for (final line in stackTraceLines) {
-        buffer.writeln(
+        // ignore: avoid_print
+        print(
           '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
         );
       }
     }
 
-    buffer.writeln(
+    // ignore: avoid_print
+    print(
       '$colorCode$_downLeftCorner${_horizontalLine * (width + 2)}$_downRightCorner$_resetAnsiCode',
     );
-
-    flush();
   }
 }
