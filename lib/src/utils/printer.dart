@@ -12,10 +12,14 @@ class PrinterOptions {
 
   final bool removeEmptyLines;
 
+  ///enable colored log output (some platforms and ide`s not support)
+  final bool enableAnsiCodes;
+
   const PrinterOptions({
     this.maxLineLength = 200,
     this.chunkSize = 512,
     this.removeEmptyLines = false,
+    this.enableAnsiCodes = true,
   });
 }
 
@@ -28,7 +32,6 @@ class Printer {
     LogLevel.debug: '\x1B[1;35m',
   };
   static const String _whiteAnsiColorCode = '\x1B[37m';
-  static const String _resetAnsiCode = '\x1B[0m';
 
   static const String _horizontalLine = '\u2500';
   static const String _verticalLine = '\u2502';
@@ -43,11 +46,15 @@ class Printer {
   final int _maxLineLength;
   final int _chunkSize;
   final bool _removeEmptyLines;
+  final bool _enableAnsiCodes;
+  final String _resetAnsiCode;
 
   Printer(PrinterOptions options)
     : _maxLineLength = options.maxLineLength,
       _chunkSize = options.chunkSize,
-      _removeEmptyLines = options.removeEmptyLines;
+      _removeEmptyLines = options.removeEmptyLines,
+      _enableAnsiCodes = options.enableAnsiCodes,
+      _resetAnsiCode = options.enableAnsiCodes ? '\x1B[0m' : '';
 
   void log(
     String message, [
@@ -81,8 +88,9 @@ class Printer {
     final Iterable<String> stackTraceLines =
         stackTrace?.toString().getLines(removeEmptyLines: false) ?? [];
 
-    final String colorCode =
-        _logLevelAnsiColorCodes[level] ?? _whiteAnsiColorCode;
+    final String colorCode = _enableAnsiCodes
+        ? _logLevelAnsiColorCodes[level] ?? _whiteAnsiColorCode
+        : '';
 
     final int linesWidth = lines.isEmpty
         ? 0
