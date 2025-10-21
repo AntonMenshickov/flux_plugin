@@ -7,9 +7,6 @@ class PrinterOptions {
   ///maximum line length
   final int maxLineLength;
 
-  ///maximum buffer size for single print() call
-  final int chunkSize;
-
   final bool removeEmptyLines;
 
   ///enable colored log output (some platforms and ide`s not support)
@@ -17,7 +14,6 @@ class PrinterOptions {
 
   const PrinterOptions({
     this.maxLineLength = 200,
-    this.chunkSize = 512,
     this.removeEmptyLines = false,
     this.enableAnsiCodes = true,
   });
@@ -44,14 +40,12 @@ class Printer {
   static const String _stackTraceLabel = 'Stack trace';
 
   final int _maxLineLength;
-  final int _chunkSize;
   final bool _removeEmptyLines;
   final bool _enableAnsiCodes;
   final String _resetAnsiCode;
 
   Printer(PrinterOptions options)
     : _maxLineLength = options.maxLineLength,
-      _chunkSize = options.chunkSize,
       _removeEmptyLines = options.removeEmptyLines,
       _enableAnsiCodes = options.enableAnsiCodes,
       _resetAnsiCode = options.enableAnsiCodes ? '\x1B[0m' : '';
@@ -115,42 +109,38 @@ class Printer {
     final buffer = StringBuffer();
     void flush() {
       if (buffer.isNotEmpty) {
-        // ignore: avoid_print
-        print(buffer.toString().trimRight());
+        final List<String> lines = buffer.toString().trimRight().split('\n');
         buffer.clear();
+        for (String line in lines) {
+          // ignore: avoid_print
+          print(line);
+        }
       }
     }
 
-    void addLine(String line) {
-      if (buffer.length + line.length + 1 > _chunkSize) {
-        flush();
-      }
-      buffer.writeln(line);
-    }
-
-    addLine(
+    buffer.writeln(
       '$colorCode$_upLeftCorner$label${_horizontalLine * (width + 2 - label.length)}$_upRightCorner$_resetAnsiCode',
     );
 
     for (final line in lines) {
-      addLine(
+      buffer.writeln(
         '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
       );
     }
 
     if (stackTraceLines.isNotEmpty) {
-      addLine(
+      buffer.writeln(
         '$colorCode$_middleLeftCorner$_horizontalLine$_stackTraceLabel${_horizontalLine * (width + 1 - _stackTraceLabel.length)}$_middleRightCorner$_resetAnsiCode',
       );
 
       for (final line in stackTraceLines) {
-        addLine(
+        buffer.writeln(
           '$colorCode$_verticalLine ${line.padRight(width)} $_verticalLine$_resetAnsiCode',
         );
       }
     }
 
-    addLine(
+    buffer.writeln(
       '$colorCode$_downLeftCorner${_horizontalLine * (width + 2)}$_downRightCorner$_resetAnsiCode',
     );
 
