@@ -6,6 +6,8 @@ import 'package:flux_plugin/src/api/api.dart';
 import 'package:flux_plugin/src/model/event_message.dart';
 import 'package:hive/hive.dart';
 
+enum CacheStrategy { keepOld, replaceByNew }
+
 class ReliableBatchQueueOptions {
   ///amount of records that can be sent to server in one time
   final int batchSize;
@@ -17,11 +19,25 @@ class ReliableBatchQueueOptions {
   ///for flutter path_provider.getApplicationDocumentsDirectory can be used
   final String storagePath;
 
+  ///Maximum stored records in queue
+  final int maxStoredRecords;
+
+  ///Keep old records and stop adding new or remove oldest records
+  ///when stored records count reach limit
+  final CacheStrategy cacheStrategy;
+
   ReliableBatchQueueOptions({
     this.batchSize = 1000,
     this.flushInterval = const Duration(seconds: 10),
     required this.storagePath,
-  });
+    this.maxStoredRecords = 10000,
+    this.cacheStrategy = CacheStrategy.replaceByNew,
+  }) : assert(maxStoredRecords > 0, 'Max store records size must be > 0'),
+       assert(batchSize > 0, 'Batch size must be > 0'),
+       assert(
+         !(batchSize > maxStoredRecords),
+         'Batch size must be greater than maxStoredRecords',
+       );
 }
 
 class ReliableBatchQueue {
@@ -34,10 +50,12 @@ class ReliableBatchQueue {
   late final Box<EventMessage> _queueBox;
   late final Box<EventMessage> _processingBox;
 
-  late final int _batchSize;
-  late final Duration _flushInterval;
-  late final String _storagePath;
-  late final DeviceInfo _deviceInfo;
+  final int _batchSize;
+  final Duration _flushInterval;
+  final String _storagePath;
+  final int _maxStoredRecords;
+  final CacheStrategy _cacheStrategy;
+  final DeviceInfo _deviceInfo;
 
   int _sequenceKey = 0;
   bool _flushing = false;
@@ -55,6 +73,8 @@ class ReliableBatchQueue {
        _batchSize = options.batchSize,
        _flushInterval = options.flushInterval,
        _storagePath = options.storagePath,
+       _maxStoredRecords = options.maxStoredRecords,
+       _cacheStrategy = options.cacheStrategy,
        _deviceInfo = deviceInfo;
 
   Future<void> init() async {
@@ -90,6 +110,15 @@ class ReliableBatchQueue {
   }
 
   void addEvent(EventMessage event) async {
+    if (_queueBox.length > _maxStoredRecords) {
+      switch (_cacheStrategy) {
+        case CacheStrategy.keepOld:
+          return;
+        case CacheStrategy.replaceByNew:
+          final firstKey = _queueBox.keyAt(0);
+          await _queueBox.delete(firstKey);
+      }
+    }
     await _queueBox.put(++_sequenceKey, event);
     _processQueue();
   }
@@ -151,12 +180,12 @@ class ReliableBatchQueue {
       await _processingBox.clear();
       _retryDelay = 0;
       print('[$ReliableBatchQueue] Flushed ${batch.length} messages');
+      _flushing = false;
       _processQueue();
     } catch (err) {
       print('[$ReliableBatchQueue] Failed to flush messages\n$err');
-      _startRetryTimer();
-    } finally {
       _flushing = false;
+      _startRetryTimer();
     }
   }
 }

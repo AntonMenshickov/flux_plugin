@@ -21,9 +21,12 @@ void main() async {
     ReliableBatchQueueOptions(
       storagePath: Directory.current.path,
       flushInterval: Duration(seconds: 30),
+      batchSize: 100,
+      maxStoredRecords: 10000,
+      cacheStrategy: CacheStrategy.keepOld,
     ),
     PrinterOptions(
-      maxLineLength: 180,
+      maxLineLength: 0,
       removeEmptyLines: false,
       enableAnsiCodes: true,
     ),
@@ -53,7 +56,7 @@ void main() async {
   //       flux.crash(message, tags: tags);
   //       break;
   //   }
-  //   await Future.delayed(Duration(milliseconds: 10));
+  //   await Future.delayed(Duration(milliseconds: 1000));
   // }
   // flux.info(
   //   'test message with duplicate tags trim\n\nand with empty lines\n\ntest\n\nend',
