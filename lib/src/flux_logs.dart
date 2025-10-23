@@ -175,7 +175,7 @@ class FluxLogs {
     if (_sendLogLevels.contains(logLevel)) {
       final EventMessage eventMessage = EventMessage(
         timestamp:
-            timestamp?.microsecondsSinceEpoch ?? _highPrecisionTime.now(),
+            timestamp?.millisecondsSinceEpoch ?? _highPrecisionTime.now(),
         logLevel: logLevel,
         message: message,
         tags: uniqueTags,

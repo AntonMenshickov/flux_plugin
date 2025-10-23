@@ -6,7 +6,12 @@ class HighPrecisionTime {
       : _baseMicroseconds = DateTime.timestamp().microsecondsSinceEpoch,
         _stopwatch = Stopwatch()..start();
 
-  int now() {
+  int nowMicroSeconds() {
     return _baseMicroseconds + _stopwatch.elapsedMicroseconds;
   }
+
+  int now() {
+    return (nowMicroSeconds() / 1000).floor();
+  }
+
 }
