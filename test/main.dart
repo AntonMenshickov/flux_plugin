@@ -1,6 +1,45 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flux_plugin/flux_plugin.dart';
+
+final _words = [
+  'lorem',
+  'ipsum',
+  'dolor',
+  'sit',
+  'amet',
+  'consectetur',
+  'adipiscing',
+  'elit',
+  'sed',
+  'do',
+  'eiusmod',
+  'tempor',
+  'incididunt',
+  'ut',
+  'labore',
+  'et',
+  'dolore',
+  'magna',
+  'aliqua',
+];
+
+String generateLorem(int wordCount) {
+  final rnd = Random();
+  return List.generate(
+    wordCount,
+    (_) => _words[rnd.nextInt(_words.length)],
+  ).join(' ');
+}
+
+Map<String, String> listToMap(List<String> list) {
+  final map = <String, String>{};
+  for (var i = 0; i < list.length; i += 2) {
+    map[list[i]] = list[i + 1];
+  }
+  return map;
+}
 
 void main() async {
   final FluxLogs flux = FluxLogs.instance;
@@ -17,47 +56,68 @@ void main() async {
       sendLogLevels: {...LogLevel.values},
       enableSocketConnection: true,
     ),
-    ApiConfig(token: '', url: 'http://localhost:4000'),
+    ApiConfig(
+      token:
+          '',
+      url: 'http://localhost:4000',
+    ),
     ReliableBatchQueueOptions(
       storagePath: Directory.current.path,
       flushInterval: Duration(seconds: 30),
-      batchSize: 100,
+      batchSize: 1000,
       maxStoredRecords: 10000,
       cacheStrategy: CacheStrategy.keepOld,
     ),
     PrinterOptions(
-      maxLineLength: 0,
+      maxLineLength: 180,
       removeEmptyLines: false,
       enableAnsiCodes: true,
     ),
   );
 
   flux.setMetaKey('deviceId', 'Unique device id');
-  flux.setMetaKey('vehicle', '0 AAA 00 154');
-  // final random = Random(DateTime.timestamp().millisecondsSinceEpoch);
-  // int index = 0;
-  // while (true) {
-  //   final String message = 'Event message ${index++}';
-  //   final List<String> tags = ['test'];
-  //   switch (random.nextInt(5)) {
-  //     case 0:
-  //       flux.warn(message, tags: tags);
-  //       break;
-  //     case 1:
-  //       flux.info(message);
-  //       break;
-  //     case 2:
-  //       flux.error(message, tags: tags);
-  //       break;
-  //     case 3:
-  //       flux.debug(message, tags: tags);
-  //       break;
-  //     case 4:
-  //       flux.crash(message, tags: tags);
-  //       break;
-  //   }
-  //   await Future.delayed(Duration(milliseconds: 1000));
-  // }
+  final random = Random(DateTime.timestamp().millisecondsSinceEpoch);
+  while (true) {
+    final String message = generateLorem(5 + random.nextInt(45));
+    final List<String> tags = generateLorem(random.nextInt(5)).split(' ').where((e) => e.isNotEmpty).toList();
+    final metaWords = generateLorem(random.nextInt(3) * 2);
+    late final Map<String, String>? meta;
+    if (metaWords.isNotEmpty) {
+      meta = listToMap(metaWords.split(' '));
+    } else {
+      meta = {};
+    }
+    switch (random.nextInt(5)) {
+      case 0:
+        flux.warn(message, tags: tags, meta: meta);
+        break;
+      case 1:
+        flux.info(message, tags: tags, meta: meta);
+        break;
+      case 2:
+        flux.error(
+          message,
+          tags: tags,
+          meta: meta,
+          stackTrace: StackTrace.current,
+        );
+        break;
+      case 3:
+        flux.debug(message, tags: tags, meta: meta);
+        break;
+      case 4:
+        flux.crash(
+          message,
+          tags: tags,
+          meta: meta,
+          stackTrace: StackTrace.current,
+        );
+        break;
+    }
+    if (random.nextInt(100) == 0) {
+      await Future.delayed(Duration(milliseconds: 10));
+    }
+  }
   // flux.info(
   //   'test message with duplicate tags trim\n\nand with empty lines\n\ntest\n\nend',
   //   tags: ['test', 'debug', 'debug'],
