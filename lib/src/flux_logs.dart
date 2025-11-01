@@ -235,4 +235,8 @@ class FluxLogs {
   }) {
     _log(message, LogLevel.crash, tags, meta, stackTrace, timestamp);
   }
+
+  List<EventMessage> getPendingEvents() {
+    return _queue.getQueue();
+  }
 }

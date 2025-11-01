@@ -115,8 +115,9 @@ class ReliableBatchQueue {
         case CacheStrategy.keepOld:
           return;
         case CacheStrategy.replaceByNew:
-          final firstKey = _queueBox.keyAt(0);
-          await _queueBox.delete(firstKey);
+          final keys = _queueBox.keys.cast<int>();
+          final oldestKey = keys.reduce(min);
+          await _queueBox.delete(oldestKey);
       }
     }
     await _queueBox.put(++_sequenceKey, event);
@@ -187,5 +188,13 @@ class ReliableBatchQueue {
       _flushing = false;
       _startRetryTimer();
     }
+  }
+
+  List<EventMessage> getQueue() {
+    final List<MapEntry<int, EventMessage>> allEntries = [];
+    allEntries.addAll(_queueBox.toMap().cast<int, EventMessage>().entries);
+    allEntries.addAll(_processingBox.toMap().cast<int, EventMessage>().entries);
+    allEntries.sort((a, b) => a.key.compareTo(b.key));
+    return allEntries.map((e) => e.value).toList();
   }
 }
